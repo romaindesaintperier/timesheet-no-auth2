@@ -36,13 +36,13 @@ const CATEGORIES: Category[] = [
   "other",
 ];
 
-function makeRow(category: Category): SubmissionRow {
+function makeRow(category: Category, defaultLocation: string = ""): SubmissionRow {
   return {
     id: crypto.randomUUID(),
     category,
     codeId: "",
     hours: 0,
-    location: "",
+    location: defaultLocation,
   };
 }
 
