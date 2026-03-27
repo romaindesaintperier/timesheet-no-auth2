@@ -14,16 +14,14 @@ import { Input } from "@/components/ui/input";
 import { getSubmissions, getEmployees, getCodes } from "@/lib/store";
 import { CATEGORY_LABELS } from "@/lib/types";
 import { Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
-function exportCSV(headers: string[], rows: string[][], filename: string) {
-  const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+function exportExcel(headers: string[], rows: string[][], filename: string) {
+  const data = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  XLSX.writeFile(wb, filename);
 }
 
 export default function Reports() {
@@ -172,14 +170,14 @@ export default function Reports() {
                 size="sm"
                 className="gap-1"
                 onClick={() =>
-                  exportCSV(
+                  exportExcel(
                     ["Code", "Label", "Category", "Total Hours"],
                     projectHoursData.map((d) => [d.code, d.label, d.category, d.totalHours.toString()]),
-                    "project-hours.csv"
+                    "code-reporting.xlsx"
                   )
                 }
               >
-                <Download className="h-4 w-4" /> Export CSV
+                <Download className="h-4 w-4" /> Export Excel
               </Button>
             </div>
             {projectHoursData.length === 0 ? (
@@ -215,14 +213,14 @@ export default function Reports() {
                 size="sm"
                 className="gap-1"
                 onClick={() =>
-                  exportCSV(
+                  exportExcel(
                     ["Employee", "State", "Hours", "% of Time"],
                     payrollData.map((d) => [d.employee, d.state, d.hours.toString(), d.pct]),
-                    "payroll-state.csv"
+                    "state-reporting.xlsx"
                   )
                 }
               >
-                <Download className="h-4 w-4" /> Export CSV
+                <Download className="h-4 w-4" /> Export Excel
               </Button>
             </div>
             {payrollData.length === 0 ? (
@@ -258,16 +256,16 @@ export default function Reports() {
                 size="sm"
                 className="gap-1"
                 onClick={() =>
-                  exportCSV(
+                  exportExcel(
                     ["Code", "Label", "Employee", "Hours", "Rate", "Cost"],
                     costData.flatMap((d) =>
                       d.empRows.map((e) => [d.code, d.label, e.name, e.hours.toString(), `$${e.rate}`, `$${e.hours * e.rate}`])
                     ),
-                    "total-cost.csv"
+                    "cost-reporting.xlsx"
                   )
                 }
               >
-                <Download className="h-4 w-4" /> Export CSV
+                <Download className="h-4 w-4" /> Export Excel
               </Button>
             </div>
             {costData.length === 0 ? (
