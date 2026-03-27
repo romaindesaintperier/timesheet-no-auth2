@@ -12,7 +12,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   due_diligence: "Due Diligence",
   portfolio_engagements: "Portfolio Engagements",
   functional_coes: "Centers of Excellence",
-  other: "Other",
+  other: "Other (e.g., PTO, sick leave, training)",
 };
 
 export interface CodeEntry {
