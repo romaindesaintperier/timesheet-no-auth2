@@ -30,8 +30,6 @@ function exportExcel(headers: string[], rows: string[][], filename: string) {
 export default function Reports() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
 
   const submissions = useMemo(() => {
     const all = getSubmissions();
