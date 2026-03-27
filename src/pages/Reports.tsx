@@ -170,14 +170,14 @@ export default function Reports() {
                 size="sm"
                 className="gap-1"
                 onClick={() =>
-                  exportCSV(
+                  exportExcel(
                     ["Code", "Label", "Category", "Total Hours"],
                     projectHoursData.map((d) => [d.code, d.label, d.category, d.totalHours.toString()]),
-                    "project-hours.csv"
+                    "code-reporting.xlsx"
                   )
                 }
               >
-                <Download className="h-4 w-4" /> Export CSV
+                <Download className="h-4 w-4" /> Export Excel
               </Button>
             </div>
             {projectHoursData.length === 0 ? (
@@ -213,14 +213,14 @@ export default function Reports() {
                 size="sm"
                 className="gap-1"
                 onClick={() =>
-                  exportCSV(
+                  exportExcel(
                     ["Employee", "State", "Hours", "% of Time"],
                     payrollData.map((d) => [d.employee, d.state, d.hours.toString(), d.pct]),
-                    "payroll-state.csv"
+                    "state-reporting.xlsx"
                   )
                 }
               >
-                <Download className="h-4 w-4" /> Export CSV
+                <Download className="h-4 w-4" /> Export Excel
               </Button>
             </div>
             {payrollData.length === 0 ? (
@@ -256,16 +256,16 @@ export default function Reports() {
                 size="sm"
                 className="gap-1"
                 onClick={() =>
-                  exportCSV(
+                  exportExcel(
                     ["Code", "Label", "Employee", "Hours", "Rate", "Cost"],
                     costData.flatMap((d) =>
                       d.empRows.map((e) => [d.code, d.label, e.name, e.hours.toString(), `$${e.rate}`, `$${e.hours * e.rate}`])
                     ),
-                    "total-cost.csv"
+                    "cost-reporting.xlsx"
                   )
                 }
               >
-                <Download className="h-4 w-4" /> Export CSV
+                <Download className="h-4 w-4" /> Export Excel
               </Button>
             </div>
             {costData.length === 0 ? (
