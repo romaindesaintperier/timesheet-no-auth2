@@ -47,33 +47,70 @@ export default function Reports() {
   const employees = getEmployees();
   const codes = getCodes();
 
-  // Project hours report
-  const projectHoursData = useMemo(() => {
-    const map = new Map<string, { code: string; label: string; category: string; totalHours: number; entries: { employee: string; hours: number; location: string }[] }>();
+  // Code reporting: build monthly breakdown per code per employee
+  const codeReportData = useMemo(() => {
+    // Collect all months present
+    const monthSet = new Set<string>();
+    // Map: codeId -> empId -> month -> hours
+    const dataMap = new Map<string, Map<string, Map<string, number>>>();
+
     for (const sub of submissions) {
       const emp = employees.find((e) => e.id === sub.employeeId);
+      const weekDate = new Date(sub.weekEnding + "T00:00:00");
+      const monthKey = format(weekDate, "yyyy-MM");
+
       for (const row of sub.rows) {
-        const code = codes.find((c) => c.id === row.codeId);
-        const key = row.codeId;
-        if (!map.has(key)) {
-          map.set(key, {
-            code: code?.code || "?",
-            label: code?.label || "Unknown",
-            category: code ? CATEGORY_LABELS[code.category] : "?",
-            totalHours: 0,
-            entries: [],
-          });
+        monthSet.add(monthKey);
+        if (!dataMap.has(row.codeId)) dataMap.set(row.codeId, new Map());
+        const empMap = dataMap.get(row.codeId)!;
+        if (!empMap.has(sub.employeeId)) empMap.set(sub.employeeId, new Map());
+        const mMap = empMap.get(sub.employeeId)!;
+        mMap.set(monthKey, (mMap.get(monthKey) || 0) + row.hours);
+      }
+    }
+
+    const months = Array.from(monthSet).sort();
+
+    type CodeRow = {
+      code: string;
+      label: string;
+      employee: string;
+      rate: number;
+      monthlyHours: Record<string, number>;
+      totalHours: number;
+      totalCost: number;
+    };
+
+    const rows: CodeRow[] = [];
+
+    for (const [codeId, empMap] of dataMap) {
+      const code = codes.find((c) => c.id === codeId);
+      for (const [empId, mMap] of empMap) {
+        const emp = employees.find((e) => e.id === empId);
+        const monthlyHours: Record<string, number> = {};
+        let totalHours = 0;
+        for (const m of months) {
+          const h = mMap.get(m) || 0;
+          monthlyHours[m] = h;
+          totalHours += h;
         }
-        const entry = map.get(key)!;
-        entry.totalHours += row.hours;
-        entry.entries.push({
+        const rate = emp?.rate || 0;
+        rows.push({
+          code: code?.code || "?",
+          label: code?.label || "Unknown",
           employee: emp?.name || "Unknown",
-          hours: row.hours,
-          location: row.location,
+          rate,
+          monthlyHours,
+          totalHours,
+          totalCost: totalHours * rate,
         });
       }
     }
-    return Array.from(map.values());
+
+    // Sort by code then employee
+    rows.sort((a, b) => a.code.localeCompare(b.code) || a.employee.localeCompare(b.employee));
+
+    return { months, rows };
   }, [submissions, employees, codes]);
 
   // Payroll state report
