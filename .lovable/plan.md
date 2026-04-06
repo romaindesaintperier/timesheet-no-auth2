@@ -1,54 +1,67 @@
 
 
-# Migrate Frontend from localStorage to Backend API
+# Remove Authentication — Keep Everything Else
 
-## Problem
-All four frontend components still import from `@/lib/store` (localStorage). The API layer (`@/lib/api.ts`) exists but is unused. The app needs to fetch/mutate data through the FastAPI backend.
+## Summary
+Strip out Microsoft Entra ID (MSAL) authentication from both frontend and backend. All pages become openly accessible. All API endpoints become public (no JWT validation). The role system is removed — all users see all nav items (Timesheet, Admin, Reports).
 
-## What Changes
+## Frontend Changes
 
-### 1. EmployeeSelect — fetch employees from API
-- Replace `getEmployees()` with `useEffect` + `fetchEmployees()` from `api.ts`
-- Add loading state while fetching
+### 1. `src/main.tsx` — Remove MSAL wrapper
+- Remove all `@azure/msal-browser` and `@azure/msal-react` imports
+- Render `<App />` directly without `PublicClientApplication` or `<MsalProvider>`
 
-### 2. TimesheetForm — fetch codes, locations, submissions from API
-- Replace `getAllActiveCodes()` → `fetchCodes()` (filter active client-side)
-- Replace `getLocations()` → `fetchLocations()`
-- Replace `getLastSubmission()` → `fetchSubmissions()` with date filter for previous week
-- Replace `addSubmission()` → `upsertSubmission()`
-- Add loading states
+### 2. `src/App.tsx` — Remove AuthProvider and ProtectedRoute
+- Remove `AuthProvider`, `TokenBridge`, and `ProtectedRoute` wrappers
+- Render `<Index />`, `<Admin />`, `<Reports />` directly inside routes (wrapped in `<AppLayout>` instead)
 
-### 3. Admin page — full CRUD via API
-- Replace all `get*`/`save*` localStorage calls with API equivalents:
-  - Employees: `fetchEmployees`, `createEmployee`, `updateEmployee`
-  - Codes: `fetchCodes`, `createCode`, `updateCode`
-  - Locations: `fetchLocations`, `createLocation`, `deleteLocation`
-  - Submissions: `fetchSubmissions`
-- Each mutation calls the API, then refreshes the list
+### 3. `src/components/AppLayout.tsx` — Remove auth-dependent UI
+- Remove `useAuth` import and usage
+- Show all nav items (Timesheet, Admin, Reports) unconditionally — no role filtering
+- Remove the sign-out button and user name display from the header
 
-### 4. Reports page — fetch from API
-- Replace `getSubmissions()`, `getEmployees()`, `getCodes()` with API calls
-- Pass `dateFrom`/`dateTo` to `fetchSubmissions()` server-side filtering
-- Add loading state
+### 4. `src/components/ProtectedRoute.tsx` — Delete file
+- No longer needed
 
-### 5. Add missing API function
-- Add `fetchUserRole()` call in `api.ts` (already referenced in auth but worth confirming)
+### 5. `src/lib/auth.tsx` — Delete file
+- The entire AuthProvider, useAuth hook, and role-fetching logic are removed
 
-### 6. Keep store.ts temporarily
-- Keep `getCurrentWeekEnding`, `getPreviousWeekEnding` helper functions (pure date logic)
-- Remove all localStorage read/write functions and seed data since they're no longer needed
-- Alternatively, move date helpers to a `utils` or `dateHelpers` file
+### 6. `src/lib/msalConfig.ts` — Delete file
+- MSAL configuration no longer needed
 
-## Technical Details
-- All API calls use `api.ts` which already handles auth headers via `setTokenProvider`
-- Error handling: wrap API calls in try/catch, show `toast.error()` on failure
-- Loading states: use simple `useState<boolean>` flags with skeleton or spinner UI
-- No new dependencies needed
+### 7. `src/lib/api.ts` — Simplify headers
+- Remove `tokenProvider`, `setTokenProvider`, and the `Authorization` header logic
+- `authHeaders()` just returns `{ "Content-Type": "application/json" }`
+- Remove `fetchUserRole` function
 
-## Files Modified
-- `src/components/EmployeeSelect.tsx`
-- `src/components/TimesheetForm.tsx`
-- `src/pages/Admin.tsx`
-- `src/pages/Reports.tsx`
-- `src/lib/store.ts` (strip down to date helpers only)
+## Backend Changes
+
+### 8. All route files — Remove `validate_token` dependency
+Remove `_=Depends(validate_token)` from every endpoint in:
+- `backend/app/routes/employees.py`
+- `backend/app/routes/codes.py`
+- `backend/app/routes/locations.py`
+- `backend/app/routes/submissions.py`
+
+### 9. `backend/app/routes/users.py` — Delete file
+- The `/users/me/role` endpoint is no longer needed
+
+### 10. `backend/app/main.py` — Remove users router
+- Remove `from .routes import ... users` and `app.include_router(users.router, ...)`
+
+### 11. `backend/app/auth.py` — Delete file
+- JWT validation module no longer needed
+
+### 12. `backend/app/config.py` — Remove Azure settings
+- Remove `azure_client_id` and `azure_tenant_id` fields from `Settings`
+
+### 13. `backend/.env.example` — Remove Azure env vars
+- Remove `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` lines
+
+## What Stays the Same
+- All pages (Timesheet, Admin, Reports) and their full functionality
+- All CRUD operations for employees, codes, locations, submissions
+- The API service layer structure (`api.ts`)
+- The backend database models, schemas, Alembic migrations
+- The UI design, styling, and layout
 
