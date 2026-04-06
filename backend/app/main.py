@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
-from .routes import employees, codes, locations, submissions, users
+from .routes import employees, codes, locations, submissions
 
 settings = get_settings()
 
@@ -22,7 +22,6 @@ app.include_router(employees.router, prefix="/api")
 app.include_router(codes.router, prefix="/api")
 app.include_router(locations.router, prefix="/api")
 app.include_router(submissions.router, prefix="/api")
-app.include_router(users.router, prefix="/api")
 
 @app.get("/api/health")
 def health():
