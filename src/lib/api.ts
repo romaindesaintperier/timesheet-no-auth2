@@ -6,26 +6,10 @@ import type { Employee, CodeEntry, WeeklySubmission } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-let tokenProvider: (() => Promise<string | null>) | null = null;
-
-export function setTokenProvider(fn: () => Promise<string | null>) {
-  tokenProvider = fn;
-}
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (tokenProvider) {
-    const token = await tokenProvider();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers = await authHeaders();
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers: { ...headers, ...options?.headers },
+    headers: { "Content-Type": "application/json", ...options?.headers },
   });
   if (!res.ok) {
     throw new Error(`API error ${res.status}: ${res.statusText}`);
@@ -64,7 +48,3 @@ export const fetchSubmissions = (params?: { dateFrom?: string; dateTo?: string }
 };
 export const upsertSubmission = (submission: WeeklySubmission) =>
   request<WeeklySubmission>("/api/submissions", { method: "POST", body: JSON.stringify(submission) });
-
-// ── User role ──
-export const fetchUserRole = () =>
-  request<{ role: "admin" | "user" }>("/api/users/me/role");

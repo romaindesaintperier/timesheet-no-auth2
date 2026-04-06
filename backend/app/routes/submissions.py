@@ -4,7 +4,6 @@ from typing import Optional
 from ..database import get_db
 from ..models import WeeklySubmission, SubmissionRow, gen_uuid
 from ..schemas import SubmissionCreate, SubmissionOut, SubmissionRowSchema
-from ..auth import validate_token
 
 router = APIRouter(tags=["Submissions"])
 
@@ -26,7 +25,6 @@ def list_submissions(
     dateFrom: Optional[str] = Query(None),
     dateTo: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    _=Depends(validate_token),
 ):
     q = db.query(WeeklySubmission)
     if dateFrom:
@@ -36,7 +34,7 @@ def list_submissions(
     return [_to_out(s) for s in q.all()]
 
 @router.post("/submissions", response_model=SubmissionOut)
-def upsert_submission(body: SubmissionCreate, db: Session = Depends(get_db), _=Depends(validate_token)):
+def upsert_submission(body: SubmissionCreate, db: Session = Depends(get_db)):
     existing = (
         db.query(WeeklySubmission)
         .filter(WeeklySubmission.employee_id == body.employeeId, WeeklySubmission.week_ending == body.weekEnding)
